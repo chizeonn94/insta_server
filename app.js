@@ -5,20 +5,7 @@ const mongoose = require("mongoose");
 const { MONGOURI } = require("./keys");
 
 const User = require("./models/user");
-const router = require("./routes/auth");
-app.use(express.json());
-app.use(router);
-
-// const connection = async () => {
-//   try {
-//     await mongoose.connect(MONGOURI);
-//     console.log("connected");
-//   } catch (error) {
-//     console.log("failed to connect");
-//   }
-// };
-
-// connection();
+const Post = require("./models/post");
 
 mongoose.connect(MONGOURI, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.connection.on("connected", (err) => {
@@ -27,6 +14,12 @@ mongoose.connection.on("connected", (err) => {
 mongoose.connection.on("error", (err) => {
   console.log(err);
 });
+
+const authRouter = require("./routes/auth");
+const postRouter = require("./routes/post");
+app.use(express.json());
+app.use(authRouter);
+app.use(postRouter);
 
 app.get("/", (req, res) => {
   res.send("Hello World!");

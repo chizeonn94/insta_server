@@ -1,14 +1,35 @@
 const express = require("express");
-const router = express.Router();
+const authRouter = express.Router();
 const mongoose = require("mongoose");
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../keys");
+const requireLogin = require("../middleware/requireLogin");
 
-router.get("/", (req, res) => {
+authRouter.get("/protected", requireLogin, (req, res) => {
   res.send("hello");
 });
 
-router.post("/signup", async (req, res) => {
+authRouter.post("/signin", async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(422).json({ error: "Please add all the fields" });
+  }
+  const user = await User.findOne({ email });
+  console.log("user >>", user);
+  if (!user) {
+    return res.status(404).json({ error: "there is no user" });
+  }
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    res.status(404).json({ error: "invalid password" });
+  }
+  const token = jwt.sign({ _id: user._id }, JWT_SECRET);
+  console.log("token", token);
+  res.status(201).json({ message: "successfully loged in", token });
+});
+authRouter.post("/signup", async (req, res) => {
   console.log(req.body);
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -48,4 +69,4 @@ router.post("/signup", async (req, res) => {
   //   });
 });
 
-module.exports = router;
+module.exports = authRouter;
