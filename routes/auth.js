@@ -27,7 +27,12 @@ authRouter.post("/signin", async (req, res) => {
   }
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
   console.log("token", token);
-  res.status(201).json({ message: "successfully loged in", token });
+  user.password = undefined;
+  res.status(201).json({
+    message: "successfully loged in",
+    user: JSON.stringify(user),
+    token,
+  });
 });
 authRouter.post("/signup", async (req, res) => {
   console.log(req.body);

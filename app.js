@@ -6,6 +6,7 @@ const { MONGOURI } = require("./keys");
 
 const User = require("./models/user");
 const Post = require("./models/post");
+const cors = require("cors");
 
 mongoose.connect(MONGOURI, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.connection.on("connected", (err) => {
@@ -17,6 +18,8 @@ mongoose.connection.on("error", (err) => {
 
 const authRouter = require("./routes/auth");
 const postRouter = require("./routes/post");
+
+app.use(cors());
 app.use(express.json());
 app.use(authRouter);
 app.use(postRouter);
