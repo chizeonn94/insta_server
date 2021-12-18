@@ -33,7 +33,7 @@ postRouter.post("/createpost", requireLogin, (req, res, next) => {
       res.json({ err });
     });
 });
-
+postRouter.put("/like", requireLogin, (req, res) => {});
 postRouter.get("/mypost", requireLogin, (req, res) => {
   post
     .find({ postedBy: req.user._id })
@@ -45,4 +45,5 @@ postRouter.get("/mypost", requireLogin, (req, res) => {
       console.log(err);
     });
 });
+
 module.exports = postRouter;

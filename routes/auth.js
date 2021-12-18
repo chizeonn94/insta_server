@@ -58,23 +58,17 @@ authRouter.post("/signup", async (req, res) => {
       console.log(e);
       return res.status(422).json({ error: e });
     });
-  //   User.findOne({ email }).then((existedUser) => {
-  //     if (existedUser) {
-  //       return res
-  //         .status(422)
-  //         .json({ error: "There was a existed User already" });
-  //     }
-  //     const newUser = new User({ ...req.body });
-  //     newUser
-  //       .save()
-  //       .then(() => {
-  //         res.json({ message: "successfully posted" });
-  //       })
-  //       .catch((e) => {
-  //         console.log(e);
-  //         return res.status(422).json({ error: e });
-  //       });
-  //   });
+});
+
+authRouter.put("/profile", requireLogin, async (req, res) => {
+  console.log(req.body);
+  console.log(req.user);
+  try {
+    await User.findByIdAndUpdate(req.user._id, req.body);
+    res.status(201).json({ message: "successfully updated" });
+  } catch (e) {
+    res.status(500).json({ error: e });
+  }
 });
 
 module.exports = authRouter;
