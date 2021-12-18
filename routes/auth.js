@@ -36,20 +36,23 @@ authRouter.post("/signin", async (req, res) => {
 });
 authRouter.post("/signup", async (req, res) => {
   console.log(req.body);
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
+
+  const { fullName, userName, email, password } = req.body;
+  if (!fullName || !userName || !email || !password) {
+    console.log("didnt fill all the field");
     return res.status(422).json({ error: "Please add all the fields" });
   }
   const hashedPassword = await bcrypt.hash(password, 12);
   const existedUser = await User.findOne({ email });
   if (existedUser) {
+    console.log("existedUser");
     return res.status(422).json({ error: "There was a existed User already" });
   }
   const newUser = new User({ ...req.body, password: hashedPassword });
   await newUser
     .save()
     .then(() => {
-      res.json({ message: "successfully posted" });
+      return res.status(201).json({ message: "successfully posted" });
     })
     .catch((e) => {
       console.log(e);
