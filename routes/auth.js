@@ -65,7 +65,7 @@ authRouter.put("/profile", requireLogin, async (req, res) => {
   console.log(req.user);
   try {
     await User.findByIdAndUpdate(req.user._id, req.body);
-    res.status(201).json({ message: "successfully updated!" });
+    res.status(201).json({ message: "successfully updated" });
   } catch (e) {
     res.status(500).json({ error: e });
   }
