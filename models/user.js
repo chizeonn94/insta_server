@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   pronouns: { type: String },
   website: { type: String },
   bio: { type: String },
-  myPhoto: { type: String },
+  photo: { type: String },
 });
 
 const User = mongoose.model("User", userSchema);

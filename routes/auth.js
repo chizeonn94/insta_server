@@ -59,7 +59,15 @@ authRouter.post("/signup", async (req, res) => {
       return res.status(422).json({ error: e });
     });
 });
-
+authRouter.get("/profile", requireLogin, async (req, res) => {
+  console.log("get profile");
+  const userData = await User.findOne({ _id: req.user._id });
+  if (userData) {
+    res.status(201).send({ userData });
+  } else {
+    res.status(404).send({ error: "cant find user" });
+  }
+});
 authRouter.put("/profile", requireLogin, async (req, res) => {
   console.log(req.body);
   console.log(req.user);

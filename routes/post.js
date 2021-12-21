@@ -23,7 +23,13 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
   }
   //req.user?.password = undefined;
   //console.log(">>>>", req.user);
-  const postToUpload = new post({ title, body, photo, postedBy: req.user._id });
+  const postToUpload = new post({
+    title,
+    body,
+    photo,
+    postedBy: req.user._id,
+    createdAt: new Date().getTime(),
+  });
   postToUpload
     .save()
     .then((posted) => {
