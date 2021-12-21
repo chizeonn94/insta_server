@@ -20,9 +20,14 @@ module.exports = async (req, res, next) => {
     }
 
     const { _id } = payload;
-    User.findById(_id).then((userData) => {
-      req.user = userData;
-      next();
-    });
+    User.findById(_id)
+      .then((userData) => {
+        if (!userData) {
+          return res.status(401).json({ error: "no user matched with token" });
+        }
+        req.user = userData;
+        next();
+      })
+      .catch((err) => console.log(err));
   });
 };

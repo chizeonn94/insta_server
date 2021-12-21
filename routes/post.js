@@ -13,13 +13,16 @@ postRouter.get("/allpost", requireLogin, (req, res) => {
       res.status(500).json({ error: err });
     });
 });
-postRouter.post("/createpost", requireLogin, (req, res, next) => {
+
+postRouter.post("/createpost", requireLogin, (req, res) => {
+  console.log("arrived api");
+  console.log("req.body >>>", req.body);
   const { title, body, photo } = req.body;
   if (!title || !body || !photo) {
     res.status(422).json({ error: "please add all the fields" });
   }
-  req.user.password = undefined;
-
+  //req.user?.password = undefined;
+  //console.log(">>>>", req.user);
   const postToUpload = new post({ title, body, photo, postedBy: req.user._id });
   postToUpload
     .save()
@@ -27,10 +30,10 @@ postRouter.post("/createpost", requireLogin, (req, res, next) => {
       console.log("posted", posted);
       res.status(201).json({ post: posted });
 
-      next();
+      //next();
     })
     .catch((err) => {
-      res.json({ err });
+      console.log({ err });
     });
 });
 postRouter.put("/like", requireLogin, (req, res) => {});
