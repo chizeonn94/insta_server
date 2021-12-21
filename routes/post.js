@@ -7,7 +7,7 @@ const post = require("../models/post");
 postRouter.get("/allpost", requireLogin, (req, res) => {
   post
     .find()
-    .populate("postedBy", "name _id")
+    .populate("postedBy", "userName _id photo")
     .then((posts) => res.status(200).json({ posts }))
     .catch((err) => {
       res.status(500).json({ error: err });
@@ -21,7 +21,7 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
   if (!title || !body || !photo) {
     res.status(422).json({ error: "please add all the fields" });
   }
-  //req.user?.password = undefined;
+  req.user.password = undefined;
   //console.log(">>>>", req.user);
   const postToUpload = new post({
     title,
