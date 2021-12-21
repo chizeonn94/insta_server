@@ -10,5 +10,5 @@ const postSchema = new mongoose.Schema({
   createdAt: { type: Number, required: true },
 });
 
-const post = mongoose.model("Post", postSchema);
-module.exports = post;
+const Post = mongoose.model("Post", postSchema);
+module.exports = Post;
