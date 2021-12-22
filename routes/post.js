@@ -21,6 +21,22 @@ postRouter.get("/allpost", requireLogin, (req, res) => {
     });
 });
 
+postRouter.get("/getsubpost", requireLogin, (req, res) => {
+  Post.find({ postedBy: { $in: [...req.user.following, req.user._id] } })
+    .populate("postedBy", "userName _id photo")
+    .populate("likes", "userName _id photo")
+    .populate({
+      path: "comments",
+      // Get friends of friends - populate the 'friends' array for every friend
+      populate: { path: "postedBy", select: "userName, _id photo" },
+    })
+
+    .then((posts) => res.status(200).json({ posts }))
+    .catch((err) => {
+      res.status(500).json({ error: err });
+    });
+});
+
 postRouter.post("/createpost", requireLogin, (req, res) => {
   console.log("arrived api");
   console.log("req.body >>>", req.body);

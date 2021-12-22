@@ -131,14 +131,33 @@ authRouter.put("/unfollow/:id", requireLogin, async (req, res) => {
 });
 authRouter.get("/followers/:id", requireLogin, async (req, res) => {
   try {
-    const userData = await User.findById(req.params.id).populate(
-      "followers",
-      "_id userName photo"
-    );
+    const userData = await User.findById(req.params.id)
+      .select("followers")
+      .populate("followers", "_id userName photo");
     res.status(201).send({ result: userData });
   } catch (error) {
     res.status(500).send({ error });
   }
 });
-
+authRouter.get("/following/:id", requireLogin, async (req, res) => {
+  try {
+    const userData = await User.findById(req.params.id)
+      .select("following")
+      .populate("following", "_id userName photo");
+    res.status(201).send({ result: userData });
+  } catch (error) {
+    res.status(500).send({ error });
+  }
+});
+authRouter.get("/search-user", requireLogin, async (req, res) => {
+  let re = new RegExp("^" + req.body.query);
+  try {
+    const users = await User.find({ userName: { $regex: re } }).select(
+      "userName fullName photo"
+    );
+    res.status(201).send({ result: users });
+  } catch (error) {
+    res.status(500).send({ error });
+  }
+});
 module.exports = authRouter;
