@@ -9,6 +9,12 @@ postRouter.get("/allpost", requireLogin, (req, res) => {
   Post.find()
     .populate("postedBy", "userName _id photo")
     .populate("likes", "userName _id photo")
+    .populate({
+      path: "comments",
+      // Get friends of friends - populate the 'friends' array for every friend
+      populate: { path: "postedBy", select: "userName, _id photo" },
+    })
+
     .then((posts) => res.status(200).json({ posts }))
     .catch((err) => {
       res.status(500).json({ error: err });
@@ -41,6 +47,18 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
     })
     .catch((err) => {
       console.log({ err });
+    });
+});
+postRouter.get("/post/:id", requireLogin, (req, res) => {
+  Post.findById(
+    req.params.id // post id
+  )
+    .populate("postedBy", "userName _id photo")
+    .then((post) => {
+      res.status(201).json({ post });
+    })
+    .catch((err) => {
+      console.log(err);
     });
 });
 postRouter.put("/like/:id", requireLogin, async (req, res) => {
@@ -77,11 +95,25 @@ postRouter.put("/unlike/:id", requireLogin, async (req, res) => {
   });
 });
 postRouter.get("/mypost", requireLogin, (req, res) => {
-  post
-    .find({ postedBy: req.user._id })
-    .populate("postedBy", "name _id")
+  Post.find({ postedBy: req.user._id })
+    .populate("postedBy", "userName _id")
     .then((myPosts) => {
       res.status(201).json({ myPosts });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+postRouter.put("/comment/:id", requireLogin, (req, res) => {
+  const comment = { text: req.body.text, postedBy: req.user._id };
+
+  Post.findByIdAndUpdate(
+    req.params.id, // post id
+    { $push: { comments: comment } },
+    { new: true }
+  )
+    .then((comment) => {
+      res.status(201).json({ comment });
     })
     .catch((err) => {
       console.log(err);

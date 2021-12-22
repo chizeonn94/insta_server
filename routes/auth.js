@@ -59,9 +59,18 @@ authRouter.post("/signup", async (req, res) => {
       return res.status(422).json({ error: e });
     });
 });
-authRouter.get("/profile", requireLogin, async (req, res) => {
-  console.log("get profile");
+authRouter.get("/myprofile", requireLogin, async (req, res) => {
+  console.log("get my profile");
   const userData = await User.findOne({ _id: req.user._id });
+  if (userData) {
+    res.status(201).send({ userData });
+  } else {
+    res.status(404).send({ error: "cant find user" });
+  }
+});
+authRouter.get("/profile/:id", requireLogin, async (req, res) => {
+  console.log("get profile");
+  const userData = await User.findOne({ _id: req.params.id });
   if (userData) {
     res.status(201).send({ userData });
   } else {
@@ -76,6 +85,59 @@ authRouter.put("/profile", requireLogin, async (req, res) => {
     res.status(201).json({ message: "successfully updated" });
   } catch (e) {
     res.status(500).json({ error: e });
+  }
+});
+authRouter.put("/follow/:id", requireLogin, async (req, res) => {
+  try {
+    const userToFollow = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: { followers: req.user._id },
+      },
+      { new: true }
+    );
+    const myData = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $push: { following: req.params.id },
+      },
+      { new: true }
+    );
+    res.status(201).send({ result: { userIFollowed: userToFollow, myData } });
+  } catch (error) {
+    res.status(500).send({ error });
+  }
+});
+authRouter.put("/unfollow/:id", requireLogin, async (req, res) => {
+  try {
+    const userToFollow = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $pull: { followers: req.user._id },
+      },
+      { new: true }
+    );
+    const myData = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $pull: { following: req.params.id },
+      },
+      { new: true }
+    );
+    res.status(201).send({ result: { userIFollowed: userToFollow, myData } });
+  } catch (error) {
+    res.status(500).send({ error });
+  }
+});
+authRouter.get("/followers/:id", requireLogin, async (req, res) => {
+  try {
+    const userData = await User.findById(req.params.id).populate(
+      "followers",
+      "_id userName photo"
+    );
+    res.status(201).send({ result: userData });
+  } catch (error) {
+    res.status(500).send({ error });
   }
 });
 
