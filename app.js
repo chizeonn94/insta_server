@@ -19,7 +19,7 @@ mongoose.connection.on("error", (err) => {
 const authRouter = require("./routes/auth");
 const postRouter = require("./routes/post");
 
-app.use(cors());
+//app.use(cors());
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -37,7 +37,7 @@ app.use(authRouter);
 app.use(postRouter);
 
 app.get("/", (req, res) => {
-  res.send("Hello World!!");
+  res.send("Hello World!!xx");
 });
 
 app.listen(port, () => {
