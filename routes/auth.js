@@ -6,6 +6,16 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../keys");
 const requireLogin = require("../middleware/requireLogin");
+const nodemailer = require("nodemailer");
+const sendgridTransport = require("nodemailer-sendgrid-transport");
+const transporter = nodemailer.createTransport(
+  sendgridTransport({
+    auth: {
+      api_key:
+        "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",
+    },
+  })
+);
 
 authRouter.get("/protected", requireLogin, (req, res) => {
   res.send("hello");
@@ -149,15 +159,26 @@ authRouter.get("/following/:id", requireLogin, async (req, res) => {
     res.status(500).send({ error });
   }
 });
-authRouter.get("/search-user", requireLogin, async (req, res) => {
+authRouter.get("/search-users", requireLogin, async (req, res) => {
   let re = new RegExp("^" + req.body.query);
   try {
-    const users = await User.find({ userName: { $regex: re } }).select(
-      "userName fullName photo"
-    );
+    const users = await User.find({
+      $or: [{ userName: { $regex: re } }, { fullName: { $regex: re } }],
+    }).select("userName fullName photo");
     res.status(201).send({ result: users });
   } catch (error) {
     res.status(500).send({ error });
   }
+});
+
+authRouter.post("/send-email", requireLogin, (req, res) => {
+  transporter
+    .sendMail({
+      to: "5959_jis@naver.com",
+      from: "chizeonn94@gmail.com",
+      subject: "test",
+      html: "<h1>test mail<h1>",
+    })
+    .then((res) => console.log("sucess"));
 });
 module.exports = authRouter;

@@ -25,7 +25,7 @@ app.use(authRouter);
 app.use(postRouter);
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("Hello World!!");
 });
 
 app.listen(port, () => {
