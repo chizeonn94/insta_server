@@ -40,14 +40,13 @@ postRouter.get("/getsubpost", requireLogin, (req, res) => {
 postRouter.post("/createpost", requireLogin, (req, res) => {
   console.log("arrived api");
   console.log("req.body >>>", req.body);
-  const { title, body, photo } = req.body;
-  if (!title || !body || !photo) {
+  const { body, photo } = req.body;
+  if (!body || !photo) {
     res.status(422).json({ error: "please add all the fields" });
   }
   req.user.password = undefined;
   //console.log(">>>>", req.user);
   const postToUpload = new Post({
-    title,
     body,
     photo,
     postedBy: req.user._id,
