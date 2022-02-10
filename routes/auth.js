@@ -78,9 +78,9 @@ authRouter.get("/myprofile", requireLogin, async (req, res) => {
     res.status(404).send({ error: "cant find user" });
   }
 });
-authRouter.get("/profile/:id", requireLogin, async (req, res) => {
+authRouter.get("/profile/:userName", requireLogin, async (req, res) => {
   console.log("get profile");
-  const userData = await User.findOne({ _id: req.params.id });
+  const userData = await User.findOne({ userName: req.params.userName });
   if (userData) {
     res.status(201).send({ userData });
   } else {
@@ -139,21 +139,31 @@ authRouter.put("/unfollow/:id", requireLogin, async (req, res) => {
     res.status(500).send({ error });
   }
 });
-authRouter.get("/followers/:id", requireLogin, async (req, res) => {
+// authRouter.get("/followers/:id", async (req, res) => {
+//   try {
+//     const userData = await User.findById(req.params.id)
+//       .select("followers")
+//       .populate("followers", "_id userName photo");
+//     res.status(201).send({ result: userData });
+//   } catch (error) {
+//     res.status(500).send({ error });
+//   }
+// });
+authRouter.get("/followers/:userName", requireLogin, async (req, res) => {
   try {
-    const userData = await User.findById(req.params.id)
+    const userData = await User.findOne({ userName: req.params.userName })
       .select("followers")
-      .populate("followers", "_id userName photo");
+      .populate("followers", "_id userName fullName photo");
     res.status(201).send({ result: userData });
   } catch (error) {
     res.status(500).send({ error });
   }
 });
-authRouter.get("/following/:id", requireLogin, async (req, res) => {
+authRouter.get("/following/:userName", async (req, res) => {
   try {
-    const userData = await User.findById(req.params.id)
+    const userData = await User.findOne({ userName: req.params.userName })
       .select("following")
-      .populate("following", "_id userName photo");
+      .populate("following", "_id userName fullName photo");
     res.status(201).send({ result: userData });
   } catch (error) {
     res.status(500).send({ error });

@@ -21,6 +21,21 @@ postRouter.get("/allpost", requireLogin, (req, res) => {
     });
 });
 
+postRouter.get("/post/:id", requireLogin, (req, res) => {
+  Post.find({ postedBy: { $in: [req.params.id] } })
+    .populate("postedBy", "userName _id photo")
+    .populate("likes", "userName _id photo")
+    .populate({
+      path: "comments",
+      // Get friends of friends - populate the 'friends' array for every friend
+      populate: { path: "postedBy", select: "userName, _id photo" },
+    })
+
+    .then((posts) => res.status(200).json({ posts }))
+    .catch((err) => {
+      res.status(500).json({ error: err });
+    });
+});
 postRouter.get("/getsubpost", requireLogin, (req, res) => {
   Post.find({ postedBy: { $in: [...req.user.following, req.user._id] } })
     .populate("postedBy", "userName _id photo")
@@ -41,8 +56,8 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
   console.log("arrived api");
   console.log("req.body >>>", req.body);
   const { body, photo } = req.body;
-  if (!body || !photo) {
-    res.status(422).json({ error: "please add all the fields" });
+  if (!photo) {
+    return res.status(422).json({ error: "photo is required" });
   }
   req.user.password = undefined;
   //console.log(">>>>", req.user);
@@ -56,7 +71,7 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
     .save()
     .then((posted) => {
       console.log("posted", posted);
-      res.status(201).json({ post: posted });
+      return res.status(201).json({ post: posted });
 
       //next();
     })
