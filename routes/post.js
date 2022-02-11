@@ -21,21 +21,6 @@ postRouter.get("/allpost", requireLogin, (req, res) => {
     });
 });
 
-postRouter.get("/post/:id", requireLogin, (req, res) => {
-  Post.find({ postedBy: { $in: [req.params.id] } })
-    .populate("postedBy", "userName _id photo")
-    .populate("likes", "userName _id photo")
-    .populate({
-      path: "comments",
-      // Get friends of friends - populate the 'friends' array for every friend
-      populate: { path: "postedBy", select: "userName, _id photo" },
-    })
-
-    .then((posts) => res.status(200).json({ posts }))
-    .catch((err) => {
-      res.status(500).json({ error: err });
-    });
-});
 postRouter.get("/getsubpost", requireLogin, (req, res) => {
   Post.find({ postedBy: { $in: [...req.user.following, req.user._id] } })
     .populate("postedBy", "userName _id photo")
@@ -84,6 +69,7 @@ postRouter.get("/post/:id", requireLogin, (req, res) => {
     req.params.id // post id
   )
     .populate("postedBy", "userName _id photo")
+    .populate("likes", "userName _id photo")
     .then((post) => {
       res.status(201).json({ post });
     })
@@ -99,14 +85,13 @@ postRouter.put("/like/:id", requireLogin, async (req, res) => {
     {
       $push: { likes: req.user._id },
     },
-    { new: true },
-    (error, result) => {
-      if (error) {
-        return res.status(422).send({ error });
-      }
-      res.status(201).send({ result });
+    { new: true }
+  ).exec((error, result) => {
+    if (error) {
+      return res.status(422).send({ error });
     }
-  );
+    return res.status(201).send({ result });
+  });
 });
 postRouter.put("/unlike/:id", requireLogin, async (req, res) => {
   console.log(req.params.id);
@@ -121,7 +106,7 @@ postRouter.put("/unlike/:id", requireLogin, async (req, res) => {
     if (err) {
       return res.status(422).send({ error: err });
     }
-    res.status(201).send({ result });
+    return res.status(201).send({ result });
   });
 });
 postRouter.get("/mypost", requireLogin, (req, res) => {
