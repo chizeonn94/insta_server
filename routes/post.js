@@ -70,6 +70,11 @@ postRouter.get("/post/:id", requireLogin, (req, res) => {
   )
     .populate("postedBy", "userName _id photo")
     .populate("likes", "userName _id photo")
+    .populate({
+      path: "comments",
+      // Get friends of friends - populate the 'friends' array for every friend
+      populate: { path: "postedBy", select: "userName _id photo" },
+    })
     .then((post) => {
       res.status(201).json({ post });
     })
@@ -127,6 +132,11 @@ postRouter.put("/comment/:id", requireLogin, (req, res) => {
     { $push: { comments: comment } },
     { new: true }
   )
+    .populate({
+      path: "comments",
+      // Get friends of friends - populate the 'friends' array for every friend
+      populate: { path: "postedBy", select: "userName _id photo" },
+    })
     .then((comment) => {
       res.status(201).json({ comment });
     })
