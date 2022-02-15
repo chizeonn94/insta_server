@@ -29,16 +29,18 @@ authRouter.post("/signin", async (req, res) => {
   const user = await User.findOne({ email });
   console.log("user >>", user);
   if (!user) {
+    console.log("no user");
     return res.status(404).json({ error: "there is no user" });
   }
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    res.status(404).json({ error: "invalid password" });
+    console.log("not match");
+    return res.status(404).json({ error: "invalid password" });
   }
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
   console.log("token", token);
   user.password = undefined;
-  res.status(201).json({
+  return res.status(201).json({
     message: "successfully loged in",
     user: JSON.stringify(user),
     token,
@@ -98,25 +100,40 @@ authRouter.put("/profile", requireLogin, async (req, res) => {
   }
 });
 authRouter.put("/follow/:id", requireLogin, async (req, res) => {
-  try {
-    const userToFollow = await User.findByIdAndUpdate(
-      req.params.id,
-      {
-        $push: { followers: req.user._id },
-      },
-      { new: true }
-    );
-    const myData = await User.findByIdAndUpdate(
-      req.user._id,
-      {
-        $push: { following: req.params.id },
-      },
-      { new: true }
-    );
-    res.status(201).send({ result: { userIFollowed: userToFollow, myData } });
-  } catch (error) {
-    res.status(500).send({ error });
-  }
+  // try {
+  //   const userToFollow = await User.findByIdAndUpdate(
+  //     req.params.id,
+  //     {
+  //       $push: { followers: req.user._id },
+  //     },
+  //     { new: true }
+  //   );
+  //   const myData = await User.findByIdAndUpdate(
+  //     req.user._id,
+  //     {
+  //       $push: { following: req.params.id },
+  //     },
+  //     { new: true }
+  //   );
+  //   res.status(201).send({ result: { userIFollowed: userToFollow, myData } });
+  // } catch (error) {
+  //   res.status(500).send({ error });
+  // }
+  User.findByIdAndUpdate(
+    req.user._id,
+    { $push: { following: req.params.id } },
+    { new: true }
+  )
+    .populate({
+      path: "following",
+      select: "userName photo",
+    })
+    .then((myData) => {
+      res.status(201).json({ result: { myData } });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 authRouter.put("/unfollow/:id", requireLogin, async (req, res) => {
   try {
@@ -133,7 +150,10 @@ authRouter.put("/unfollow/:id", requireLogin, async (req, res) => {
         $pull: { following: req.params.id },
       },
       { new: true }
-    );
+    ).populate({
+      path: "following",
+      select: "userName photo",
+    });
     res.status(201).send({ result: { userIFollowed: userToFollow, myData } });
   } catch (error) {
     res.status(500).send({ error });
