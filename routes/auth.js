@@ -8,6 +8,7 @@ const { JWT_SECRET } = require("../keys");
 const requireLogin = require("../middleware/requireLogin");
 const nodemailer = require("nodemailer");
 const sendgridTransport = require("nodemailer-sendgrid-transport");
+const { getUserInfo } = require("../controllers/userController");
 const transporter = nodemailer.createTransport(
   sendgridTransport({
     auth: {
@@ -63,7 +64,7 @@ authRouter.post("/signup", async (req, res) => {
   const newUser = new User({ ...req.body, password: hashedPassword });
   await newUser
     .save()
-    .then(() => {
+    .then((newuser) => {
       return res.status(201).json({ message: "successfully posted" });
     })
     .catch((e) => {
@@ -80,15 +81,7 @@ authRouter.get("/myprofile", requireLogin, async (req, res) => {
     res.status(404).send({ error: "cant find user" });
   }
 });
-authRouter.get("/profile/:userName", requireLogin, async (req, res) => {
-  console.log("get profile");
-  const userData = await User.findOne({ userName: req.params.userName });
-  if (userData) {
-    res.status(201).send({ userData });
-  } else {
-    res.status(404).send({ error: "cant find user" });
-  }
-});
+authRouter.get("/profile/:userName", requireLogin, getUserInfo);
 authRouter.put("/profile", requireLogin, async (req, res) => {
   console.log(req.body);
   console.log(req.user);
@@ -119,21 +112,30 @@ authRouter.put("/follow/:id", requireLogin, async (req, res) => {
   // } catch (error) {
   //   res.status(500).send({ error });
   // }
-  User.findByIdAndUpdate(
+
+  const userToFollow = await User.findByIdAndUpdate(
+    req.params.id,
+    { $push: { followers: req.params.id } },
+    { new: true }
+  ).populate({
+    path: "following",
+    select: "userName photo",
+  });
+  const myData = await User.findByIdAndUpdate(
     req.user._id,
     { $push: { following: req.params.id } },
     { new: true }
-  )
-    .populate({
-      path: "following",
-      select: "userName photo",
-    })
-    .then((myData) => {
-      res.status(201).json({ result: { myData } });
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  );
+  if (!userToFollow || !myData) {
+    return res.status(500).send({ error });
+  }
+
+  let cloned = JSON.parse(JSON.stringify(myData));
+
+  cloned.following.forEach((followingUser) => {
+    followingUser["isFollowing"] = true;
+  });
+  return res.status(201).json(cloned);
 });
 authRouter.put("/unfollow/:id", requireLogin, async (req, res) => {
   try {

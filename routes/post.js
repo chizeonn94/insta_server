@@ -3,22 +3,50 @@ const postRouter = express.Router();
 const mongoose = require("mongoose");
 const requireLogin = require("../middleware/requireLogin");
 const Post = require("../models/post");
+const User = require("../models/user");
 const { ObjectId } = mongoose.Types;
 
-postRouter.get("/allpost", requireLogin, (req, res) => {
-  Post.find()
+postRouter.get("/allpost", requireLogin, async (req, res) => {
+  const posts = await Post.find()
     .populate("postedBy", "userName _id photo")
     .populate("likes", "userName _id photo")
     .populate({
       path: "comments",
       // Get friends of friends - populate the 'friends' array for every friend
       populate: { path: "postedBy", select: "userName, _id photo" },
-    })
-
-    .then((posts) => res.status(200).json({ posts }))
-    .catch((err) => {
-      res.status(500).json({ error: err });
     });
+  const myInfo = await User.findById(req.user._id);
+  const followedUsers = new Set();
+  myInfo.following.forEach((user) => {
+    followedUsers.add(user.valueOf());
+  });
+  console.log("followedUsers", followedUsers);
+  let clonedPosts = JSON.parse(JSON.stringify(posts));
+  clonedPosts.forEach((post) => {
+    // console.log(post);
+    post.likes.forEach((user) => {
+      // console.log(user);
+      if (followedUsers.has(user._id.valueOf())) {
+        user.isFollowing = true;
+      } else {
+        user.isFollowing = false;
+      }
+    });
+    post.likes.forEach((user) => {
+      // console.log(user);
+      if (user._id.valueOf() === req.user._id.valueOf()) {
+        post.pressedLiked = true;
+        return false;
+      }
+      post.pressedLiked = false;
+    });
+  });
+  res.status(200).json({ posts: clonedPosts });
+
+  // .then((posts) => res.status(200).json({ posts }))
+  // .catch((err) => {
+  //   res.status(500).json({ error: err });
+  // });
 });
 
 postRouter.get("/getsubpost", requireLogin, (req, res) => {
@@ -50,7 +78,6 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
     body,
     photo,
     postedBy: req.user._id,
-    createdAt: new Date().getTime(),
   });
   postToUpload
     .save()
@@ -84,35 +111,34 @@ postRouter.get("/post/:id", requireLogin, (req, res) => {
 });
 postRouter.put("/like/:id", requireLogin, async (req, res) => {
   console.log(req.params.id);
-  //console.log(ObjectId(req.params.id));
-  Post.findByIdAndUpdate(
+
+  const post = await Post.findByIdAndUpdate(
     req.params.id,
-    {
-      $push: { likes: req.user._id },
-    },
+    { $push: { likes: req.user._id } },
     { new: true }
-  ).exec((error, result) => {
-    if (error) {
-      return res.status(422).send({ error });
-    }
-    return res.status(201).send({ result });
-  });
+  );
+
+  const clonedPost = JSON.parse(JSON.stringify(post));
+
+  if (!post) {
+    return res.status(422).send({ error });
+  }
+  return res.status(201).send({ result: clonedPost });
 });
 postRouter.put("/unlike/:id", requireLogin, async (req, res) => {
   console.log(req.params.id);
-  //console.log(ObjectId(req.params.id));
-  Post.findByIdAndUpdate(
+
+  const post = await Post.findByIdAndUpdate(
     req.params.id,
-    {
-      $pull: { likes: req.user._id },
-    },
+    { $pull: { likes: req.user._id } },
     { new: true }
-  ).exec((err, result) => {
-    if (err) {
-      return res.status(422).send({ error: err });
-    }
-    return res.status(201).send({ result });
-  });
+  );
+  const clonedPost = JSON.parse(JSON.stringify(post));
+
+  if (!post) {
+    return res.status(422).send({ error });
+  }
+  return res.status(201).send({ result: clonedPost });
 });
 postRouter.get("/mypost", requireLogin, (req, res) => {
   Post.find({ postedBy: req.user._id })

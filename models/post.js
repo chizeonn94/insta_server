@@ -11,5 +11,9 @@ const postSchema = new mongoose.Schema({
   comments: [{ text: String, postedBy: { type: ObjectId, ref: "User" } }],
 });
 
+postSchema.pre("save", function (next) {
+  this.createdAt = Date.now();
+  next();
+});
 const Post = mongoose.model("Post", postSchema);
 module.exports = Post;

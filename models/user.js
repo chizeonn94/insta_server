@@ -14,5 +14,8 @@ const userSchema = new mongoose.Schema({
   following: [{ type: ObjectId, ref: "User" }], // 내가 follow하는 user list
 });
 
+userSchema.virtual("isFollowing").get(function () {
+  return false;
+});
 const User = mongoose.model("User", userSchema);
 module.exports = User;
