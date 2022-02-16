@@ -116,7 +116,7 @@ postRouter.put("/like/:id", requireLogin, async (req, res) => {
     req.params.id,
     { $push: { likes: req.user._id } },
     { new: true }
-  );
+  ).populate({ path: "likes", select: "userName photo" });
 
   const clonedPost = JSON.parse(JSON.stringify(post));
 
@@ -132,7 +132,7 @@ postRouter.put("/unlike/:id", requireLogin, async (req, res) => {
     req.params.id,
     { $pull: { likes: req.user._id } },
     { new: true }
-  );
+  ).populate({ path: "likes", select: "userName photo" });
   const clonedPost = JSON.parse(JSON.stringify(post));
 
   if (!post) {

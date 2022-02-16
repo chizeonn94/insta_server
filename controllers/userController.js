@@ -6,17 +6,14 @@ module.exports.getUserInfo = async (req, res) => {
   });
 
   if (userData) {
-    loginedUser = await User.findById(req.user._id);
-    // console.log("now", userData._id); //지금 조회하고 있는 계정 854 dave
-    // console.log("loginedUser", loginedUser);
     let array = [];
-    loginedUser.following.forEach((user) => {
+    userData.followers.forEach((user) => {
       array.push(user.valueOf());
     });
 
-    followingUser = new Set(array); //내가 팔로우하고 있는 사람들
+    const followedUser = new Set(array); //팔로워들
     let cloned = JSON.parse(JSON.stringify(userData));
-    if (followingUser.has(userData._id.valueOf())) {
+    if (followedUser.has(req.user._id.valueOf())) {
       cloned.isFollowing = true;
     } else {
       cloned.isFollowing = false;

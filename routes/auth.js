@@ -83,114 +83,144 @@ authRouter.get("/myprofile", requireLogin, async (req, res) => {
 });
 authRouter.get("/profile/:userName", requireLogin, getUserInfo);
 authRouter.put("/profile", requireLogin, async (req, res) => {
-  console.log(req.body);
-  console.log(req.user);
+  // console.log(req.body);
+  // console.log(req.user);
   try {
-    await User.findByIdAndUpdate(req.user._id, req.body);
-    res.status(201).json({ message: "successfully updated" });
+    const newUser = await User.findByIdAndUpdate(req.user._id, req.body);
+
+    res.status(201).send({ message: "successfully updated", newUser });
   } catch (e) {
-    res.status(500).json({ error: e });
+    console.log(e);
+    console.log("fuck");
+    res.status(500).send({ error: e });
   }
 });
 authRouter.put("/follow/:id", requireLogin, async (req, res) => {
-  // try {
-  //   const userToFollow = await User.findByIdAndUpdate(
-  //     req.params.id,
-  //     {
-  //       $push: { followers: req.user._id },
-  //     },
-  //     { new: true }
-  //   );
-  //   const myData = await User.findByIdAndUpdate(
-  //     req.user._id,
-  //     {
-  //       $push: { following: req.params.id },
-  //     },
-  //     { new: true }
-  //   );
-  //   res.status(201).send({ result: { userIFollowed: userToFollow, myData } });
-  // } catch (error) {
-  //   res.status(500).send({ error });
-  // }
+  try {
+    await User.findByIdAndUpdate(
+      req.params.id,
+      { $push: { followers: req.user._id } },
+      { new: true }
+    );
+    await User.findByIdAndUpdate(
+      req.user._id,
+      { $push: { following: req.params.id } },
+      { new: true }
+    );
 
-  const userToFollow = await User.findByIdAndUpdate(
-    req.params.id,
-    { $push: { followers: req.params.id } },
-    { new: true }
-  ).populate({
-    path: "following",
-    select: "userName photo",
-  });
-  const myData = await User.findByIdAndUpdate(
-    req.user._id,
-    { $push: { following: req.params.id } },
-    { new: true }
-  );
-  if (!userToFollow || !myData) {
-    return res.status(500).send({ error });
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    return res.status(500).send({ success: false, error });
   }
-
-  let cloned = JSON.parse(JSON.stringify(myData));
-
-  cloned.following.forEach((followingUser) => {
-    followingUser["isFollowing"] = true;
-  });
-  return res.status(201).json(cloned);
 });
 authRouter.put("/unfollow/:id", requireLogin, async (req, res) => {
   try {
-    const userToFollow = await User.findByIdAndUpdate(
+    await User.findByIdAndUpdate(
       req.params.id,
-      {
-        $pull: { followers: req.user._id },
-      },
+      { $pull: { followers: req.user._id } },
       { new: true }
     );
-    const myData = await User.findByIdAndUpdate(
+    await User.findByIdAndUpdate(
       req.user._id,
-      {
-        $pull: { following: req.params.id },
-      },
+      { $pull: { following: req.params.id } },
       { new: true }
-    ).populate({
-      path: "following",
-      select: "userName photo",
-    });
-    res.status(201).send({ result: { userIFollowed: userToFollow, myData } });
+    );
+    return res.status(201).send({ success: true });
   } catch (error) {
-    res.status(500).send({ error });
+    return res.status(500).send({ success: false, error });
   }
 });
-// authRouter.get("/followers/:id", async (req, res) => {
-//   try {
-//     const userData = await User.findById(req.params.id)
-//       .select("followers")
-//       .populate("followers", "_id userName photo");
-//     res.status(201).send({ result: userData });
-//   } catch (error) {
-//     res.status(500).send({ error });
-//   }
-// });
+
 authRouter.get("/followers/:userName", requireLogin, async (req, res) => {
   try {
     const userData = await User.findOne({ userName: req.params.userName })
       .select("followers")
       .populate("followers", "_id userName fullName photo");
-    res.status(201).send({ result: userData });
+    console.log("userData", userData);
+    let cloned = JSON.parse(JSON.stringify(userData));
+    const myData = await User.findById(req.user._id);
+    let array = [];
+    myData.following.forEach((user) => {
+      array.push(user.valueOf());
+    });
+    const followingUsers = new Set(array);
+    cloned.followers.forEach((user) => {
+      if (followingUsers.has(user._id.valueOf())) {
+        user.isFollowing = true;
+      } else {
+        user.isFollowing = false;
+      }
+    });
+    res.status(201).send({ result: cloned });
   } catch (error) {
     res.status(500).send({ error });
   }
 });
-authRouter.get("/following/:userName", async (req, res) => {
+
+authRouter.get("/following/:userName", requireLogin, async (req, res) => {
   try {
     const userData = await User.findOne({ userName: req.params.userName })
       .select("following")
       .populate("following", "_id userName fullName photo");
-    res.status(201).send({ result: userData });
+    let cloned = JSON.parse(JSON.stringify(userData));
+    const myData = await User.findById(req.user._id);
+    let array = [];
+    myData.following.forEach((user) => {
+      array.push(user.valueOf());
+    });
+    const followingUsers = new Set(array);
+    cloned.following.forEach((user) => {
+      if (followingUsers.has(user._id.valueOf())) {
+        user.isFollowing = true;
+      } else {
+        user.isFollowing = false;
+      }
+    });
+
+    res.status(201).send({ result: cloned });
   } catch (error) {
+    console.log(error);
     res.status(500).send({ error });
   }
 });
+authRouter.get(
+  "/FollowersAndFollowing/:userName",
+  requireLogin,
+  async (req, res) => {
+    try {
+      const userData = await User.findOne({ userName: req.params.userName })
+        .select("followers following")
+        .populate("followers", "_id userName fullName photo")
+        .populate("following", "_id userName fullName photo");
+
+      console.log("userData", userData);
+      let cloned = JSON.parse(JSON.stringify(userData));
+      const myData = await User.findById(req.user._id);
+      let array = [];
+      myData.following.forEach((user) => {
+        array.push(user.valueOf());
+      });
+      const followingUsers = new Set(array);
+      cloned.followers.forEach((user) => {
+        if (followingUsers.has(user._id.valueOf())) {
+          user.isFollowing = true;
+        } else {
+          user.isFollowing = false;
+        }
+      });
+      cloned.following.forEach((user) => {
+        if (followingUsers.has(user._id.valueOf())) {
+          user.isFollowing = true;
+        } else {
+          user.isFollowing = false;
+        }
+      });
+      res.status(201).send({ result: cloned });
+    } catch (error) {
+      res.status(500).send({ error });
+    }
+  }
+);
 authRouter.get("/search-users", requireLogin, async (req, res) => {
   let re = new RegExp("^" + req.body.query);
   try {
