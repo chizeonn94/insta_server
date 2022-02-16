@@ -221,7 +221,34 @@ authRouter.get(
     }
   }
 );
-authRouter.get("/search-users", requireLogin, async (req, res) => {
+authRouter.put("/changepassword", requireLogin, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  let currentPassword = undefined;
+  console.log("oldPassword", oldPassword);
+  console.log("newPassword", newPassword);
+
+  try {
+    const userDocument = await User.findById(req.user._id);
+    currentPassword = userDocument.password;
+    const isMatch = await bcrypt.compare(oldPassword, currentPassword);
+    if (!isMatch) {
+      console.log("not match");
+      return res.status(401).send({
+        message: "Your old password was entered incorrectly, please try again.",
+      });
+    }
+    userDocument.password = newPassword;
+    await userDocument.save();
+    res.status(201).send({ message: "successfully changed password" });
+  } catch (e) {
+    console.log(e);
+    console.log("fuck");
+    res.status(500).send({ error: e });
+  }
+});
+authRouter.post("/search-users", requireLogin, async (req, res) => {
+  console.log("arrived");
+  console.log(req.body);
   let re = new RegExp("^" + req.body.query);
   try {
     const users = await User.find({
