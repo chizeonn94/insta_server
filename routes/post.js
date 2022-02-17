@@ -2,6 +2,7 @@ const express = require("express");
 const postRouter = express.Router();
 const mongoose = require("mongoose");
 const requireLogin = require("../middleware/requireLogin");
+const Notification = require("../models/notification");
 const Post = require("../models/post");
 const User = require("../models/user");
 const { ObjectId } = mongoose.Types;
@@ -150,25 +151,36 @@ postRouter.get("/mypost", requireLogin, (req, res) => {
       console.log(err);
     });
 });
-postRouter.put("/comment/:id", requireLogin, (req, res) => {
+postRouter.put("/comment/:id", requireLogin, async (req, res) => {
   const comment = { text: req.body.text, postedBy: req.user._id };
-
-  Post.findByIdAndUpdate(
-    req.params.id, // post id
-    { $push: { comments: comment } },
-    { new: true }
-  )
-    .populate({
+  try {
+    const post = await Post.findByIdAndUpdate(
+      req.params.id, // post id
+      { $push: { comments: comment } },
+      { new: true }
+    ).populate({
       path: "comments",
       // Get friends of friends - populate the 'friends' array for every friend
       populate: { path: "postedBy", select: "userName _id photo" },
-    })
-    .then((comment) => {
-      res.status(201).json({ comment });
-    })
-    .catch((err) => {
-      console.log(err);
     });
+
+    const notification = new Notification({
+      sender: req.user._id,
+      receiver: post.postedBy,
+      notificationType: "comment",
+      date: Date.now(),
+      notificationData: {
+        postId: post._id,
+        image: post.photo,
+      },
+    });
+
+    await notification.save();
+    return res.status(201).json({ comment: post, success: true });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false });
+  }
 });
 
 module.exports = postRouter;
