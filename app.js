@@ -65,7 +65,7 @@ io.use((socket, next) => {
     return next(new Error("Not authorized."));
   }
 }).on("connection", (socket) => {
-  socket.join(socket.user.id);
+  socket.join(socket.user.id); //user id로 룸번호 부여하여 들어간다.
   console.log("socket connected:", socket.id);
   socket.on("disconnect", () => {
     console.log("user disconnected");

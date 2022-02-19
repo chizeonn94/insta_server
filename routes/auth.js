@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const { JWT_SECRET } = require("../keys");
 const requireLogin = require("../middleware/requireLogin");
 const nodemailer = require("nodemailer");
@@ -23,9 +24,34 @@ authRouter.get("/protected", requireLogin, (req, res) => {
 });
 
 authRouter.post("/signin", async (req, res) => {
+  const { authorization } = req.headers;
+  console.log("authorization", authorization);
   const { email, password } = req.body;
+  if (authorization) {
+    console.log("we have authorization", authorization);
+
+    //const id = jwtsimple.decode(authorization, JWT_SECRET).id;
+    const id = jwt.verify(authorization, JWT_SECRET)?._id;
+    console.log("id", id);
+    const user = await User.findOne({ _id: id });
+    if (user) {
+      return res.status(201).send({
+        user,
+        token: authorization,
+        success: true,
+      });
+    } else {
+      return res.status(401).send({
+        error: "not authorized",
+        success: false,
+      });
+    }
+  }
   if (!email || !password) {
-    return res.status(422).json({ error: "Please add all the fields" });
+    return res.status(500).send({
+      error: "please add all the fields",
+      success: false,
+    });
   }
   const user = await User.findOne({ email });
   console.log("user >>", user);
@@ -41,9 +67,10 @@ authRouter.post("/signin", async (req, res) => {
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
   console.log("token", token);
   user.password = undefined;
-  return res.status(201).json({
+  return res.status(201).send({
+    success: true,
     message: "successfully loged in",
-    user: JSON.stringify(user),
+    user: user,
     token,
   });
 });

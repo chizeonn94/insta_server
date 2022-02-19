@@ -1,6 +1,7 @@
 const express = require("express");
 const postRouter = express.Router();
 const mongoose = require("mongoose");
+const { sendNotification } = require("../handlers/sockethandler");
 const requireLogin = require("../middleware/requireLogin");
 const Notification = require("../models/notification");
 const Post = require("../models/post");
@@ -120,7 +121,26 @@ postRouter.put("/like/:id", requireLogin, async (req, res) => {
   ).populate({ path: "likes", select: "userName photo" });
 
   const clonedPost = JSON.parse(JSON.stringify(post));
+  const notification = new Notification({
+    sender: req.user._id,
+    receiver: post.postedBy._id,
+    notificationType: "like",
+    date: Date.now(),
+    notificationData: {
+      postId: req.params.id,
+      image: post.photo,
+    },
+  });
 
+  await notification.save();
+  sendNotification(req, {
+    ...notification.toObject(),
+    sender: {
+      _id: req.user._id,
+      username: req.user.userName,
+      avatar: req.user.photo,
+    },
+  });
   if (!post) {
     return res.status(422).send({ error });
   }
