@@ -25,14 +25,14 @@ authRouter.get("/protected", requireLogin, (req, res) => {
 
 authRouter.post("/signin", async (req, res) => {
   const { authorization } = req.headers;
-  console.log("authorization", authorization);
+  //console.log("authorization", authorization);
   const { email, password } = req.body;
   if (authorization) {
-    console.log("we have authorization", authorization);
+    //console.log("we have authorization", authorization);
 
     //const id = jwtsimple.decode(authorization, JWT_SECRET).id;
     const id = jwt.verify(authorization, JWT_SECRET)?._id;
-    console.log("id", id);
+
     const user = await User.findOne({ _id: id });
     if (user) {
       return res.status(201).send({
@@ -54,18 +54,16 @@ authRouter.post("/signin", async (req, res) => {
     });
   }
   const user = await User.findOne({ email });
-  console.log("user >>", user);
+
   if (!user) {
-    console.log("no user");
     return res.status(404).json({ error: "there is no user" });
   }
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    console.log("not match");
     return res.status(404).json({ error: "invalid password" });
   }
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
-  console.log("token", token);
+
   user.password = undefined;
   return res.status(201).send({
     success: true,
@@ -100,7 +98,7 @@ authRouter.post("/signup", async (req, res) => {
     });
 });
 authRouter.get("/myprofile", requireLogin, async (req, res) => {
-  console.log("get my profile");
+  //console.log("get my profile");
   const userData = await User.findOne({ _id: req.user._id });
   if (userData) {
     res.status(201).send({ userData });
@@ -118,7 +116,7 @@ authRouter.put("/profile", requireLogin, async (req, res) => {
     res.status(201).send({ message: "successfully updated", newUser });
   } catch (e) {
     console.log(e);
-    console.log("fuck");
+
     res.status(500).send({ error: e });
   }
 });
@@ -274,8 +272,6 @@ authRouter.put("/changepassword", requireLogin, async (req, res) => {
   }
 });
 authRouter.post("/search-users", requireLogin, async (req, res) => {
-  console.log("arrived");
-  console.log(req.body);
   let re = new RegExp("^" + req.body.query);
   try {
     const users = await User.find({

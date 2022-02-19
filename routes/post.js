@@ -68,14 +68,12 @@ postRouter.get("/getsubpost", requireLogin, (req, res) => {
 });
 
 postRouter.post("/createpost", requireLogin, (req, res) => {
-  console.log("arrived api");
-  console.log("req.body >>>", req.body);
   const { body, photo } = req.body;
   if (!photo) {
     return res.status(422).json({ error: "photo is required" });
   }
   req.user.password = undefined;
-  //console.log(">>>>", req.user);
+
   const postToUpload = new Post({
     body,
     photo,
@@ -84,7 +82,7 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
   postToUpload
     .save()
     .then((posted) => {
-      console.log("posted", posted);
+      //console.log("posted", posted);
       return res.status(201).json({ post: posted });
 
       //next();

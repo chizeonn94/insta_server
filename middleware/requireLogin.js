@@ -10,9 +10,9 @@ module.exports = async (req, res, next) => {
   }
 
   const token = authorization.replace("Bearer ", "");
-  console.log("JWT_SECRET", JWT_SECRET);
-  console.log("token", token);
-  console.log("authorization", authorization);
+  // console.log("JWT_SECRET", JWT_SECRET);
+  // console.log("token", token);
+  // console.log("authorization", authorization);
 
   jwt.verify(token, JWT_SECRET, (err, payload) => {
     if (err) {

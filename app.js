@@ -1,13 +1,17 @@
 const express = require("express");
+const { createServer } = require("http");
 const app = express();
+const httpServer = createServer(app);
 const port = process.env.PORT || 5000;
-const socketio = require("socket.io");
+const { Server } = require("socket.io");
 const mongoose = require("mongoose");
-const { MONGOURI } = require("./keys");
+const { MONGOURI, JWT_SECRET } = require("./keys");
 
 const User = require("./models/user");
 const Post = require("./models/post");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const { instrument } = require("@socket.io/admin-ui");
 
 mongoose.connect(MONGOURI, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.connection.on("connected", (err) => {
@@ -19,6 +23,7 @@ mongoose.connection.on("error", (err) => {
 
 const authRouter = require("./routes/auth");
 const postRouter = require("./routes/post");
+const notificationRouter = require("./routes/notification");
 
 app.use(cors());
 app.use(function (req, res, next) {
@@ -36,6 +41,7 @@ app.use(function (req, res, next) {
 app.use(express.json());
 app.use(authRouter);
 app.use(postRouter);
+app.use(notificationRouter);
 
 app.get("/", (req, res) => {
   res.send("Hello World!!xx");
@@ -44,30 +50,38 @@ app.get("/", (req, res) => {
 const expressServer = app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
-const io = socketio(expressServer);
+const io = new Server(expressServer, {
+  cors: { origin: ["http://localhost:3001", "https://admin.socket.io"] },
+  credentials: true,
+});
 
 app.set("socketio", io);
 console.log("Socket.io listening for connections");
-io.use((socket, next) => {
-  const token = socket.handshake.query.token;
-  if (token) {
+io.use(function (socket, next) {
+  if (socket.handshake.query && socket.handshake.query.token) {
     try {
-      const user = jwt.decode(token, process.env.JWT_SECRET);
-      if (!user) {
-        return next(new Error("Not authorized."));
-      }
-      socket.user = user;
-      return next();
-    } catch (err) {
-      next(err);
+      jwt.verify(
+        socket.handshake.query.token,
+        JWT_SECRET,
+        function (err, decoded) {
+          if (err) {
+            console.log("fail");
+            return next(new Error("Authentication error"));
+          }
+
+          socket.decoded = decoded;
+          next();
+        }
+      );
+    } catch (e) {
+      console.log("error", e);
     }
   } else {
-    return next(new Error("Not authorized."));
+    console.log("none");
+    next(new Error("Authentication error"));
   }
 }).on("connection", (socket) => {
-  socket.join(socket.user.id); //user id로 룸번호 부여하여 들어간다.
-  console.log("socket connected:", socket.id);
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
+  socket.join(socket.decoded._id);
+  console.log("socket id is", socket.id);
 });
+instrument(io, { auth: false });

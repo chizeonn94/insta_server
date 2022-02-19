@@ -1,7 +1,10 @@
 module.exports.sendNotification = (req, notification) => {
+  console.log("sendNotification...");
   const io = req.app.get("socketio");
-  console.log("notification.receiver", notification.receiver);
-  io.sockets.in(notification.receiver).emit("newNotification", notification);
+  console.log("notification.receiver", notification.receiver.valueOf());
+  io.sockets
+    .in(notification.receiver.valueOf())
+    .emit("newNotification", notification);
 };
 
 module.exports.sendPost = (req, post, receiver) => {
