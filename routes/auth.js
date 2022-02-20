@@ -10,6 +10,8 @@ const requireLogin = require("../middleware/requireLogin");
 const nodemailer = require("nodemailer");
 const sendgridTransport = require("nodemailer-sendgrid-transport");
 const { getUserInfo } = require("../controllers/userController");
+const Notification = require("../models/notification");
+const { sendNotification } = require("../handlers/sockethandler");
 const transporter = nodemailer.createTransport(
   sendgridTransport({
     auth: {
@@ -132,9 +134,25 @@ authRouter.put("/follow/:id", requireLogin, async (req, res) => {
       { $push: { following: req.params.id } },
       { new: true }
     );
+    const notification = new Notification({
+      sender: req.user._id,
+      receiver: req.params.id,
+      notificationType: "follow",
+      date: Date.now(),
+    });
 
-    return res.status(201).json({ success: true });
+    await notification.save();
+    sendNotification(req, {
+      ...notification.toObject(),
+      sender: {
+        _id: req.user._id,
+        userName: req.user.userName,
+        photo: req.user.photo,
+      },
+    });
+    return res.status(201).send({ success: true });
   } catch (error) {
+    console.log(error);
     return res.status(500).send({ success: false, error });
   }
 });

@@ -126,7 +126,7 @@ postRouter.put("/like/:id", requireLogin, async (req, res) => {
     date: Date.now(),
     notificationData: {
       postId: req.params.id,
-      image: post.photo,
+      photo: post.photo,
     },
   });
 
@@ -135,8 +135,8 @@ postRouter.put("/like/:id", requireLogin, async (req, res) => {
     ...notification.toObject(),
     sender: {
       _id: req.user._id,
-      username: req.user.userName,
-      avatar: req.user.photo,
+      userName: req.user.userName,
+      photo: req.user.photo,
     },
   });
   if (!post) {
@@ -159,15 +159,19 @@ postRouter.put("/unlike/:id", requireLogin, async (req, res) => {
   }
   return res.status(201).send({ result: clonedPost });
 });
-postRouter.get("/mypost", requireLogin, (req, res) => {
-  Post.find({ postedBy: req.user._id })
-    .populate("postedBy", "userName _id")
-    .then((myPosts) => {
-      res.status(201).json({ myPosts });
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+
+postRouter.get("/usersposts/:userName", requireLogin, async (req, res) => {
+  const user = await User.findOne({ userName: req.params.userName });
+  const posts = await Post.find({ postedBy: user._id }).populate(
+    "postedBy",
+    "userName _id"
+  );
+
+  if (posts) {
+    res.status(201).json({ posts, success: true });
+  } else {
+    res.status(201).json({ posts, success: false });
+  }
 });
 postRouter.put("/comment/:id", requireLogin, async (req, res) => {
   const comment = { text: req.body.text, postedBy: req.user._id };
@@ -189,11 +193,20 @@ postRouter.put("/comment/:id", requireLogin, async (req, res) => {
       date: Date.now(),
       notificationData: {
         postId: post._id,
-        image: post.photo,
+        photo: post.photo,
+        comment: req.body.text,
       },
     });
 
     await notification.save();
+    sendNotification(req, {
+      ...notification.toObject(),
+      sender: {
+        _id: req.user._id,
+        userName: req.user.userName,
+        photo: req.user.photo,
+      },
+    });
     return res.status(201).json({ comment: post, success: true });
   } catch (err) {
     console.log(err);

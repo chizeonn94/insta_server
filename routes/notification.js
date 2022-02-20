@@ -13,9 +13,23 @@ notificationRouter.get("/notification", requireLogin, async (req, res) => {
     receiver: req.user._id,
     read: false,
   }).populate("sender", "userName _id photo");
-
+  let cloned = JSON.parse(JSON.stringify(notifications));
+  const myData = await User.findById(req.user._id);
+  let array = [];
+  myData.following.forEach((user) => {
+    array.push(user.valueOf());
+  });
+  const followingUsers = new Set(array);
+  console.log("cloned NOtifications", cloned);
+  cloned.forEach((noti) => {
+    if (followingUsers.has(noti.sender._id)) {
+      noti.isFollowing = true;
+    } else {
+      noti.isFollowing = false;
+    }
+  });
   if (notifications) {
-    res.status(201).send({ notifications, success: true });
+    res.status(201).send({ notifications: cloned, success: true });
   }
   res.status(401).send({ success: false });
 });
