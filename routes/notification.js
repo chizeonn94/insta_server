@@ -11,8 +11,9 @@ const { ObjectId } = mongoose.Types;
 notificationRouter.get("/notification", requireLogin, async (req, res) => {
   const notifications = await Notification.find({
     receiver: req.user._id,
-    read: false,
-  }).populate("sender", "userName _id photo");
+  })
+    .sort({ date: -1 })
+    .populate("sender", "userName _id photo");
   let cloned = JSON.parse(JSON.stringify(notifications));
   const myData = await User.findById(req.user._id);
   let array = [];
@@ -20,7 +21,7 @@ notificationRouter.get("/notification", requireLogin, async (req, res) => {
     array.push(user.valueOf());
   });
   const followingUsers = new Set(array);
-  console.log("cloned NOtifications", cloned);
+
   cloned.forEach((noti) => {
     if (followingUsers.has(noti.sender._id)) {
       noti.isFollowing = true;
@@ -28,10 +29,18 @@ notificationRouter.get("/notification", requireLogin, async (req, res) => {
       noti.isFollowing = false;
     }
   });
-  if (notifications) {
-    res.status(201).send({ notifications: cloned, success: true });
-  }
-  res.status(401).send({ success: false });
-});
 
+  if (notifications) {
+    return res.status(201).send({ notifications: cloned, success: true });
+  }
+  return res.status(401).send({ success: false });
+});
+notificationRouter.put("/read-notification", requireLogin, async (req, res) => {
+  try {
+    await Notification.updateMany({ receiver: req.user._id }, { read: true });
+    return res.status(201).send({ success: true });
+  } catch (error) {
+    return res.status(500).send({ success: false, error });
+  }
+});
 module.exports = notificationRouter;

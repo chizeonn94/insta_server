@@ -38,7 +38,7 @@ authRouter.post("/signin", async (req, res) => {
     const user = await User.findOne({ _id: id });
     if (user) {
       return res.status(201).send({
-        user,
+        user: { ...user.toObject(), token: authorization },
         token: authorization,
         success: true,
       });
@@ -70,7 +70,7 @@ authRouter.post("/signin", async (req, res) => {
   return res.status(201).send({
     success: true,
     message: "successfully loged in",
-    user: user,
+    user: { ...user.toObject(), token },
     token,
   });
 });
