@@ -179,7 +179,7 @@ authRouter.get("/followers/:userName", requireLogin, async (req, res) => {
     const userData = await User.findOne({ userName: req.params.userName })
       .select("followers")
       .populate("followers", "_id userName fullName photo");
-    console.log("userData", userData);
+
     let cloned = JSON.parse(JSON.stringify(userData));
     const myData = await User.findById(req.user._id);
     let array = [];
@@ -236,7 +236,6 @@ authRouter.get(
         .populate("followers", "_id userName fullName photo")
         .populate("following", "_id userName fullName photo");
 
-      console.log("userData", userData);
       let cloned = JSON.parse(JSON.stringify(userData));
       const myData = await User.findById(req.user._id);
       let array = [];

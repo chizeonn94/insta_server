@@ -15,14 +15,14 @@ postRouter.get("/allpost", requireLogin, async (req, res) => {
     .populate({
       path: "comments",
       // Get friends of friends - populate the 'friends' array for every friend
-      populate: { path: "postedBy", select: "userName, _id photo" },
+      populate: { path: "postedBy", select: "userName _id photo" },
     });
   const myInfo = await User.findById(req.user._id);
   const followedUsers = new Set();
   myInfo.following.forEach((user) => {
     followedUsers.add(user.valueOf());
   });
-  console.log("followedUsers", followedUsers);
+
   let clonedPosts = JSON.parse(JSON.stringify(posts));
   clonedPosts.forEach((post) => {
     // console.log(post);
@@ -44,11 +44,6 @@ postRouter.get("/allpost", requireLogin, async (req, res) => {
     });
   });
   res.status(200).json({ posts: clonedPosts });
-
-  // .then((posts) => res.status(200).json({ posts }))
-  // .catch((err) => {
-  //   res.status(500).json({ error: err });
-  // });
 });
 
 postRouter.get("/getsubpost", requireLogin, (req, res) => {
@@ -90,6 +85,14 @@ postRouter.post("/createpost", requireLogin, (req, res) => {
     .catch((err) => {
       console.log({ err });
     });
+});
+postRouter.delete("/delete-post/:id", requireLogin, async (req, res) => {
+  try {
+    await Post.deleteOne({ _id: req.params.id });
+    return res.status(201).send({ success: true });
+  } catch (error) {
+    return res.status(500).send({ error, success: false });
+  }
 });
 postRouter.get("/post/:id", requireLogin, (req, res) => {
   Post.findById(
