@@ -51,7 +51,13 @@ const expressServer = app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
 const io = new Server(expressServer, {
-  cors: { origin: ["http://localhost:3001", "https://admin.socket.io"] },
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://52.79.242.136:3000", // insta-client ec2 server
+      "https://admin.socket.io",
+    ],
+  },
   credentials: true,
 });
 
