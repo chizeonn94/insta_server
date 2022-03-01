@@ -54,7 +54,7 @@ const io = new Server(expressServer, {
   cors: {
     origin: [
       "http://localhost:3000",
-      "http://52.79.242.136:3000", // insta-client ec2 server
+      "http://3.34.181.253", // insta-client ec2 server
       "https://admin.socket.io",
     ],
   },
