@@ -87,17 +87,21 @@ authRouter.post("/signup", async (req, res) => {
   const existedUser = await User.findOne({ email });
   if (existedUser) {
     console.log("existedUser");
-    return res.status(422).json({ error: "There was a existed User already" });
+    return res
+      .status(422)
+      .json({ error: "There was a existed User already", success: false });
   }
   const newUser = new User({ ...req.body, password: hashedPassword });
   await newUser
     .save()
     .then((newuser) => {
-      return res.status(201).json({ message: "successfully posted" });
+      return res
+        .status(201)
+        .json({ message: "successfully posted", success: true });
     })
     .catch((e) => {
       console.log(e);
-      return res.status(422).json({ error: e });
+      return res.status(422).json({ error: e, success: false });
     });
 });
 authRouter.get("/myprofile", requireLogin, async (req, res) => {
@@ -285,7 +289,6 @@ authRouter.put("/changepassword", requireLogin, async (req, res) => {
     res.status(201).send({ message: "successfully changed password" });
   } catch (e) {
     console.log(e);
-    console.log("fuck");
     res.status(500).send({ error: e });
   }
 });
@@ -295,7 +298,23 @@ authRouter.post("/search-users", requireLogin, async (req, res) => {
     const users = await User.find({
       $or: [{ userName: { $regex: re } }, { fullName: { $regex: re } }],
     }).select("userName fullName photo");
-    res.status(201).send({ result: users });
+    let cloned = JSON.parse(JSON.stringify(users));
+
+    const myData = await User.findById(req.user._id);
+    let array = [];
+    myData.following.forEach((user) => {
+      array.push(user.valueOf());
+    });
+    const followingUsers = new Set(array);
+    // console.log("followingUsers>>", followingUsers);
+    cloned.forEach((user) => {
+      if (followingUsers.has(user._id.valueOf())) {
+        user.isFollowing = true;
+      } else {
+        user.isFollowing = false;
+      }
+    });
+    res.status(201).send({ result: cloned });
   } catch (error) {
     res.status(500).send({ error });
   }
