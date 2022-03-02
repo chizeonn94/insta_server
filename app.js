@@ -57,6 +57,7 @@ const io = new Server(expressServer, {
       "http://3.34.181.253", // insta-client ec2 server
       "https://admin.socket.io",
       "http://ec2-3-34-181-253.ap-northeast-2.compute.amazonaws.com",
+      "http://ec2-3-34-181-253.ap-northeast-2.compute.amazonaws.com:5000"
     ],
   },
   credentials: true,

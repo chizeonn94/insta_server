@@ -36,6 +36,7 @@ authRouter.post("/signin", async (req, res) => {
     const id = jwt.verify(authorization, JWT_SECRET)?._id;
 
     const user = await User.findOne({ _id: id });
+    user.password = undefined;
     if (user) {
       return res.status(201).send({
         user: { ...user.toObject(), token: authorization },
@@ -58,11 +59,11 @@ authRouter.post("/signin", async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    return res.status(404).json({ error: "there is no user" });
+    return res.status(404).json({ error: "there is no user", success: false });
   }
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return res.status(404).json({ error: "invalid password" });
+    return res.status(404).json({ error: "invalid password", success: false });
   }
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
 
