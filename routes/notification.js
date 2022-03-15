@@ -21,9 +21,9 @@ notificationRouter.get("/notification", requireLogin, async (req, res) => {
     array.push(user.valueOf());
   });
   const followingUsers = new Set(array);
-
+  // console.log(cloned);
   cloned.forEach((noti) => {
-    if (followingUsers.has(noti.sender._id)) {
+    if (followingUsers.has(noti?.sender?._id)) {
       noti.isFollowing = true;
     } else {
       noti.isFollowing = false;
